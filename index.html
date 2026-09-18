@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人互動式 Web App 履歷 | Portfolio</title>
+  
+  <!-- 引入 Web Component 內部所需的 2D/3D 庫 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #1e293b;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    nav a {
+      color: #94a3b8;
+      text-decoration: none;
+      margin-left: 20px;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: #38bdf8; }
+
+    /* Main Container */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+    }
+    .hero h1 { font-size: 2.2rem; color: #f8fafc; margin-bottom: 10px; }
+    .hero p { color: #94a3b8; max-width: 600px; margin: 0 auto 20px; font-size: 1rem; }
+    
+    .tags {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    /* Section Component */
+    section {
+      margin-top: 40px;
+    }
+    .section-title {
+      font-size: 1.4rem;
+      color: #f8fafc;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 20px;
+      background: #38bdf8;
+      border-radius: 2px;
+    }
+
+    /* Interactive Showcase Card */
+    .showcase-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">Alex's Portfolio App</div>
+    <nav>
+      <a href="#about">關於我</a>
+      <a href="#interactive">2D/3D 互動元件</a>
+      <a href="#projects">精選作品</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Hero Section -->
+    <section class="hero" id="about">
+      <div class="avatar">👨‍💻</div>
+      <h1>你好，我是 Web App 開發者</h1>
+      <p>熱衷於打造高復用性的前端 Web Component、Canvas 互動介面與 Three.js 3D 視覺化體驗。</p>
+      <div class="tags">
+        <span class="tag">#Web Components</span>
+        <span class="tag">#Three.js 3D</span>
+        <span class="tag">#Fabric.js Canvas</span>
+        <span class="tag">#Shadow DOM 樣式隔離</span>
+      </div>
+    </section>
+
+    <!-- 🎯 核心亮點：2D/3D 魔法圖層 Web Component 區塊 -->
+    <section id="interactive">
+      <div class="section-title">核心專案亮點：自研輕量化 2D/3D 魔法圖層組件</div>
+      <div class="showcase-card">
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;">
+          💡 <strong>技術架構說明：</strong>下方區塊為完全封裝在 Shadow DOM 內的原生 Web Component (<code>&lt;magic-3d-layer&gt;</code>)，具備 zero-dependency 自動依賴載入與 CSS 樣式隔離，可一鍵嵌套至任何網頁中。
+        </p>
+
+        <!-- 直接嵌入我們的自訂標籤 -->
+        <magic-3d-layer></magic-3d-layer>
+      </div>
+    </section>
+
+    <!-- 精選作品集 / 智慧書籤展示區 -->
+    <section id="projects">
+      <div class="section-title">其他專案與經驗</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <div style="background: #0f172a; border: 1px solid #1e293b; padding: 20px; border-radius: 12px;">
+          <h3 style="color: #38bdf8; margin-bottom: 8px;">📌 私人智慧書籤 App</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem;">自動解析網址並渲染質感縮圖卡片，支援深色模式與動態 LocalStorage 書籤管理。</p>
+        </div>
+        <div style="background: #0f172a; border: 1px solid #1e293b; padding: 20px; border-radius: 12px;">
+          <h3 style="color: #38bdf8; margin-bottom: 8px;">🚀 跨框架元件庫設計</h3>
+          <p style="color: #94a3b8; font-size: 0.85rem;">使用原生 HTML5 & ES6 Class 實現零樣式污染的自訂元件，提升團隊開發效率。</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © 2026 Personal Resume Web App. Built with Web Components & Three.js.
+    </footer>
+  </div>
+
+  <!-- 引入封裝好的 Web Component 邏輯 -->
+  <script>
+    class Magic3DLayer extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.canvas = null;
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.currentMesh = null;
+      }
+
+      connectedCallback() {
+        this.renderUI();
+        this.initFabric();
+        this.initThree();
+        this.bindEvents();
+      }
+
+      renderUI() {
+        this.shadowRoot.innerHTML = `
+          <style>
+            :host { display: block; width: 100%; box-sizing: border-box; }
+            * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+            .grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+            .card { background: #0b0f19; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+            .card-header { color: #38bdf8; font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; }
+            .canvas-wrap { border: 2px dashed #334155; border-radius: 8px; overflow: hidden; background: #020617; }
+            #three-viewport { width: 360px; height: 360px; background: #020617; border-radius: 8px; }
+            .controls { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+            button, label.btn-upload {
+              background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+              color: #ffffff !important; border: none; padding: 8px 14px; border-radius: 6px;
+              font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease;
+            }
+            button:hover, label.btn-upload:hover { opacity: 0.9; transform: translateY(-1px); }
+            input[type="file"] { display: none; }
+            .tip { font-size: 0.8rem; color: #64748b; margin-top: 8px; }
+          </style>
+
+          <div class="grid">
+            <div class="card">
+              <div class="card-header">🎨 2D 魔法畫布</div>
+              <div class="canvas-wrap">
+                <canvas id="fabric-canvas" width="360" height="360"></canvas>
+              </div>
+              <div class="controls">
+                <label class="btn-upload" for="upload-img">📁 上傳 PNG</label>
+                <input type="file" id="upload-img" accept="image/*">
+                <button id="btn-add-sample">新增範例</button>
+                <button id="btn-convert-3d">🔮 轉 3D 建模</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">🧊 3D 即時模型</div>
+              <div id="three-viewport"></div>
+              <div class="controls">
+                <span class="tip">拖拽旋轉 / 滾輪縮放 / 右鍵平移</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      initFabric() {
+        const canvasEl = this.shadowRoot.getElementById('fabric-canvas');
+        this.canvas = new fabric.Canvas(canvasEl, { backgroundColor: '#020617', selection: true });
+        this.addSampleShape();
+      }
+
+      addSampleShape() {
+        const star = new fabric.Path('M 100 0 L 125 75 L 200 75 L 140 120 L 160 190 L 100 150 L 40 190 L 60 120 L 0 75 L 75 75 Z', {
+          fill: '#38bdf8', stroke: '#818cf8', strokeWidth: 2, left: 80, top: 80, scaleX: 0.9, scaleY: 0.9
+        });
+        this.canvas.add(star);
+        this.canvas.setActiveObject(star);
+      }
+
+      initThree() {
+        const viewport = this.shadowRoot.getElementById('three-viewport');
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        this.camera.position.set(0, 0, 250);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(360, 360);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        viewport.appendChild(this.renderer.domElement);
+
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(80, 100, 150);
+        this.scene.add(ambient, dirLight);
+
+        const animate = () => {
+          requestAnimationFrame(animate);
+          this.controls.update();
+          if (this.currentMesh) this.currentMesh.rotation.y += 0.006;
+          this.renderer.render(this.scene, this.camera);
+        };
+        animate();
+      }
+
+      bindEvents() {
+        const uploadInput = this.shadowRoot.getElementById('upload-img');
+        uploadInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (f) => {
+            fabric.Image.fromURL(f.target.result, (img) => {
+              img.scaleToWidth(160);
+              img.set({ left: 90, top: 90 });
+              this.canvas.add(img);
+              this.canvas.setActiveObject(img);
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+
+        this.shadowRoot.getElementById('btn-add-sample').addEventListener('click', () => this.addSampleShape());
+        this.shadowRoot.getElementById('btn-convert-3d').addEventListener('click', () => this.convertTo3D());
+      }
+
+      convertTo3D() {
+        const activeObj = this.canvas.getActiveObject();
+        if (!activeObj) { alert('請先在 2D 畫布選取一個物件！'); return; }
+
+        if (this.currentMesh) {
+          this.scene.remove(this.currentMesh);
+          this.currentMesh.geometry.dispose();
+          this.currentMesh = null;
+        }
+
+        let shape = new THREE.Shape();
+        if (activeObj.type === 'path') {
+          shape.moveTo(0, 40); shape.lineTo(12, 12); shape.lineTo(40, 12);
+          shape.lineTo(16, -8); shape.lineTo(24, -36); shape.lineTo(0, -20);
+          shape.lineTo(-24, -36); shape.lineTo(-16, -8); shape.lineTo(-40, 12); shape.lineTo(-12, 12);
+        } else {
+          const w = 70, h = 70;
+          shape.moveTo(-w/2, -h/2); shape.lineTo(w/2, -h/2);
+          shape.lineTo(w/2, h/2); shape.lineTo(-w/2, h/2);
+        }
+
+        const geometry = new THREE.ExtrudeGeometry(shape, { steps: 1, depth: 12, bevelEnabled: true, bevelThickness: 2, bevelSize: 1, bevelSegments: 3 });
+        geometry.center();
+
+        const material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.4, roughness: 0.2 });
+        this.currentMesh = new THREE.Mesh(geometry, material);
+        this.scene.add(this.currentMesh);
+      }
+    }
+
+    customElements.define('magic-3d-layer', Magic3DLayer);
+  </script>
+</body>
+</html>
