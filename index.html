@@ -8,9 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- 引入 Web Component 內部所需的 2D/3D 庫 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 
     <script>
@@ -480,16 +480,47 @@
                     <span class="text-cyber-green">&gt;</span> 作品與專案藝廊 / PORTFOLIO GALLERY
                 </h2>
 
-    <!-- 🎯 核心亮點：2D/3D 魔法圖層 Web Component 區塊 -->
-    <section id="interactive">
-      <div class="section-title">核心專案亮點：2D → 3D → 即時 3D 建模展示</div>
-      <div class="showcase-card">
-        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;">
-          💡 <strong>製作流程：</strong>從 2D 去背角色素材、3D 視覺成果，到可在網頁中即時旋轉與縮放的 GLB 3D 模型，呈現完整的角色建模流程。
-        </p>
+    <!-- 2D / 3D / 3D MODEL SHOWCASE -->
+    <section id="interactive" class="space-y-5">
+      <div class="flex items-center justify-between border-b border-cyber-cyan/20 pb-3">
+        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+          <span class="text-cyber-cyan">&gt;</span> 2D → 3D → 3D MODEL / 建模流程
+        </h2>
+      </div>
 
-        <!-- 直接嵌入我們的自訂標籤 -->
-        <magic-3d-layer></magic-3d-layer>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <article class="bg-cyber-card/90 border border-cyber-cyan/30 rounded-lg overflow-hidden shadow-neon-cyan">
+          <div class="px-4 py-3 border-b border-cyber-cyan/20 flex items-center justify-between">
+            <span class="text-cyber-cyan font-bold text-sm">01 // 2D</span>
+            <span class="text-[10px] text-gray-500">REMOVE BG PNG</span>
+          </div>
+          <div class="h-[420px] bg-cyber-darker flex items-center justify-center p-4">
+            <img src="./assets/image/2Dremovebg-preview.png" alt="2D 去背角色" class="w-full h-full object-contain" loading="lazy">
+          </div>
+          <div class="px-4 py-3 text-xs text-gray-400">2D 去背角色素材</div>
+        </article>
+
+        <article class="bg-cyber-card/90 border border-cyber-purple/30 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-purple-500/20 flex items-center justify-between">
+            <span class="text-purple-300 font-bold text-sm">02 // 3D</span>
+            <span class="text-[10px] text-gray-500">3D RENDER</span>
+          </div>
+          <div class="h-[420px] bg-cyber-darker flex items-center justify-center p-4">
+            <img src="./assets/image/3D.jpeg" alt="3D 角色成果" class="w-full h-full object-contain" loading="lazy">
+          </div>
+          <div class="px-4 py-3 text-xs text-gray-400">3D 視覺成果</div>
+        </article>
+
+        <article class="bg-cyber-card/90 border border-cyber-green/30 rounded-lg overflow-hidden shadow-neon-green">
+          <div class="px-4 py-3 border-b border-cyber-green/20 flex items-center justify-between">
+            <span class="text-cyber-green font-bold text-sm">03 // 3D MODEL</span>
+            <span class="text-[10px] text-gray-500">GLB LIVE VIEWER</span>
+          </div>
+          <div id="glb-model-viewer" class="h-[420px] bg-cyber-darker relative overflow-hidden">
+            <div id="glb-loading" class="absolute inset-0 flex items-center justify-center text-xs text-cyber-green z-10 pointer-events-none">LOADING 3D MODEL...</div>
+          </div>
+          <div class="px-4 py-3 text-xs text-gray-400">拖曳旋轉 / 滾輪縮放 / 右鍵平移</div>
+        </article>
       </div>
     </section>
 
@@ -878,70 +909,76 @@
         }
     </script>
 
-  <!-- 2D / 3D / 3D MODEL 展示區塊 -->
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
-    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
+  <!-- 3D GLB Viewer -->
+  <script>
+    (function initGlbViewer() {
+      const host = document.getElementById('glb-model-viewer');
+      const loading = document.getElementById('glb-loading');
+      if (!host || !window.THREE || !THREE.GLTFLoader) return;
 
-    class Magic3DLayer extends HTMLElement {
-      constructor() { super(); this.attachShadow({ mode: 'open' }); }
-      connectedCallback() { this.renderUI(); this.initModel(); }
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.setClearColor(0x000000, 0);
+      host.appendChild(renderer.domElement);
 
-      renderUI() {
-        this.shadowRoot.innerHTML = `
-          <style>
-            :host{display:block;width:100%;box-sizing:border-box}*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
-            .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;width:100%}
-            .card{min-width:0;background:#0b0f19;border:1px solid #1e293b;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;box-shadow:0 0 18px rgba(56,189,248,.06)}
-            .card-header{color:#38bdf8;font-size:.92rem;font-weight:700;margin-bottom:10px;text-align:center;letter-spacing:.04em}
-            .stage{width:100%;aspect-ratio:1/1;background:#020617;border:1px solid #334155;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
-            img{width:100%;height:100%;object-fit:contain;display:block}
-            #three-viewport{width:100%;height:100%;position:absolute;inset:0;cursor:grab}#three-viewport:active{cursor:grabbing}
-            .tip{font-size:.76rem;color:#64748b;margin-top:9px;text-align:center;line-height:1.45}
-            .badge{position:absolute;left:9px;top:9px;padding:4px 7px;border-radius:5px;background:rgba(2,6,23,.82);border:1px solid rgba(56,189,248,.4);color:#7dd3fc;font-size:.65rem;z-index:2;pointer-events:none}
-            .loading{position:absolute;color:#94a3b8;font-size:.78rem;z-index:1}.error{color:#fb7185;padding:16px;text-align:center;line-height:1.5}
-            @media(max-width:900px){.grid{grid-template-columns:1fr}.stage{max-height:420px}}
-          </style>
-          <div class="grid">
-            <div class="card"><div class="card-header">01 // 2D 原始素材</div><div class="stage"><span class="badge">2D</span><img src="./assets/image/2Dremovebg-preview.png" alt="2D 去背角色"></div><div class="tip">去背 PNG / 角色原始平面素材</div></div>
-            <div class="card"><div class="card-header">02 // 3D 視覺成果</div><div class="stage"><span class="badge">3D RENDER</span><img src="./assets/image/3D.jpeg" alt="3D 角色成果"></div><div class="tip">3D 角色視覺化成果預覽</div></div>
-            <div class="card"><div class="card-header">03 // 3D 即時建模</div><div class="stage"><span class="badge">GLB / REAL-TIME</span><div class="loading" id="loading">載入 3D 模型中...</div><div id="three-viewport"></div></div><div class="tip">滑鼠拖曳旋轉 / 滾輪縮放 / 右鍵平移</div></div>
-          </div>`;
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.35));
+      const key = new THREE.DirectionalLight(0xffffff, 1.25);
+      key.position.set(4, 7, 6);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(0x88ccff, 0.65);
+      fill.position.set(-4, 2, 3);
+      scene.add(fill);
+
+      function resize() {
+        const w = Math.max(host.clientWidth, 1);
+        const h = Math.max(host.clientHeight, 1);
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
       }
+      resize();
+      window.addEventListener('resize', resize);
 
-      initModel() {
-        const viewport=this.shadowRoot.getElementById('three-viewport');
-        const loading=this.shadowRoot.getElementById('loading');
-        const scene=new THREE.Scene();
-        const camera=new THREE.PerspectiveCamera(38,1,.01,1000);
-        const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-        renderer.outputEncoding=THREE.sRGBEncoding;
-        renderer.physicallyCorrectLights=true;
-        viewport.appendChild(renderer.domElement);
-        const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.06;
-        scene.add(new THREE.HemisphereLight(0xffffff,0x223344,1.8));
-        const key=new THREE.DirectionalLight(0xffffff,2.4);key.position.set(3,5,4);scene.add(key);
-        const fill=new THREE.DirectionalLight(0x7dd3fc,1.2);fill.position.set(-4,2,2);scene.add(fill);
-        let model=null;
-        const resize=()=>{const w=viewport.clientWidth||320,h=viewport.clientHeight||320;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};
-        new ResizeObserver(resize).observe(viewport);resize();
-        const loader=new GLTFLoader();
-        loader.load('./assets/image/3D_Model_Preview.glb',(gltf)=>{
-          model=gltf.scene;scene.add(model);
-          model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material.side=THREE.DoubleSide;o.material.needsUpdate=true}}});
-          const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+      new THREE.GLTFLoader().load(
+        './assets/image/3D_Model_Preview.glb',
+        function (gltf) {
+          const model = gltf.scene;
+          scene.add(model);
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
           model.position.sub(center);
-          const maxDim=Math.max(size.x,size.y,size.z)||1;
-          const dist=maxDim/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*1.35;
-          camera.position.set(dist*.55,maxDim*.12,dist);camera.near=Math.max(dist/100,0.01);camera.far=dist*100;camera.updateProjectionMatrix();
-          controls.target.set(0,0,0);controls.minDistance=maxDim*.45;controls.maxDistance=maxDim*6;controls.update();loading.style.display='none';
-        },undefined,(err)=>{console.error(err);loading.className='loading error';loading.textContent='3D 模型載入失敗，請確認 assets/image/3D_Model_Preview.glb 路徑。'});
-        const animate=()=>{requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)};animate();
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          const distance = maxDim / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.35;
+          camera.position.set(distance * 0.55, maxDim * 0.15, distance);
+          camera.near = Math.max(maxDim / 100, 0.01);
+          camera.far = maxDim * 100;
+          camera.updateProjectionMatrix();
+          controls.target.set(0, 0, 0);
+          controls.update();
+          if (loading) loading.remove();
+        },
+        undefined,
+        function (err) {
+          console.error('GLB load error:', err);
+          if (loading) loading.textContent = '3D MODEL LOAD FAILED';
+        }
+      );
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
       }
-    }
-    customElements.define('magic-3d-layer',Magic3DLayer);
+      animate();
+    })();
   </script>
 
 </body>
