@@ -1,160 +1,470 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>個人互動式 Web App 履歷 | Portfolio</title>
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrayHung // 專案與多媒體作品集</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- 引入 Web Component 內部所需的 2D/3D 庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: #0b0f19;
-      color: #e2e8f0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-      padding-bottom: 60px;
-    }
 
-    /* Header & Navigation */
-    header {
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid #1e293b;
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .logo {
-      font-size: 1.25rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    nav a {
-      color: #94a3b8;
-      text-decoration: none;
-      margin-left: 20px;
-      font-size: 0.9rem;
-      transition: color 0.2s;
-    }
-    nav a:hover { color: #38bdf8; }
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            black: '#0a0d12',
+                            darker: '#05070a',
+                            card: '#121824',
+                            green: '#00ff66',
+                            brightGreen: '#39ff14',
+                            cyan: '#00f3ff',
+                            red: '#ff0055',
+                            purple: '#b026ff'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace', 'Consolas']
+                    },
+                    boxShadow: {
+                        'neon-green': '0 0 15px rgba(0, 255, 102, 0.4), 0 0 30px rgba(0, 255, 102, 0.2)',
+                        'neon-cyan': '0 0 15px rgba(0, 243, 255, 0.4), 0 0 30px rgba(0, 243, 255, 0.2)',
+                        'neon-red': '0 0 15px rgba(255, 0, 85, 0.4), 0 0 30px rgba(255, 0, 85, 0.2)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 自訂 Glitch 效果與動畫 */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+        .scanline-effect {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 255, 102, 0.1) 50%,
+                rgba(0, 255, 102, 0.1)
+            );
+            background-size: 100% 4px;
+        }
 
-    /* Main Container */
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip: rect(0, 0, 0, 0);
+        }
+        .glitch-text:hover::before {
+            left: -2px;
+            text-shadow: 2px 0 #ff0055;
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+        .glitch-text:hover::after {
+            left: 2px;
+            text-shadow: -2px 0 #00f3ff;
+            animation: glitch-anim2 3s infinite linear alternate-reverse;
+        }
 
-    /* Hero Section */
-    .hero {
-      padding: 60px 0 40px;
-      text-align: center;
-    }
-    .avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
-      margin: 0 auto 20px;
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
-    }
-    .hero h1 { font-size: 2.2rem; color: #f8fafc; margin-bottom: 10px; }
-    .hero p { color: #94a3b8; max-width: 600px; margin: 0 auto 20px; font-size: 1rem; }
-    
-    .tags {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .tag {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid #334155;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-    }
+        @keyframes glitch-anim {
+            0% { clip: rect(20px, 9999px, 15px, 0); }
+            20% { clip: rect(42px, 9999px, 78px, 0); }
+            40% { clip: rect(12px, 9999px, 5px, 0); }
+            60% { clip: rect(85px, 9999px, 34px, 0); }
+            80% { clip: rect(55px, 9999px, 62px, 0); }
+            100% { clip: rect(30px, 9999px, 91px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(10px, 9999px, 40px, 0); }
+            40% { clip: rect(90px, 9999px, 20px, 0); }
+            60% { clip: rect(15px, 9999px, 80px, 0); }
+            80% { clip: rect(70px, 9999px, 10px, 0); }
+            100% { clip: rect(50px, 9999px, 60px, 0); }
+        }
 
-    /* Section Component */
-    section {
-      margin-top: 40px;
-    }
-    .section-title {
-      font-size: 1.4rem;
-      color: #f8fafc;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-title::before {
-      content: '';
-      display: inline-block;
-      width: 4px;
-      height: 20px;
-      background: #38bdf8;
-      border-radius: 2px;
-    }
-
-    /* Interactive Showcase Card */
-    .showcase-card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    /* Footer */
-    footer {
-      text-align: center;
-      margin-top: 60px;
-      color: #64748b;
-      font-size: 0.85rem;
-    }
-  </style>
+        /* 滾動條樣式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05070a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff66;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f3ff;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-cyber-black text-gray-200 font-mono relative min-h-screen overflow-x-hidden">
 
-  <!-- Header -->
-  <header>
-    <div class="logo">Alex's Portfolio App</div>
-    <nav>
-      <a href="#about">關於我</a>
-      <a href="#interactive">2D/3D 互動元件</a>
-      <a href="#projects">精選作品</a>
-    </nav>
-  </header>
+    <!-- 背景 Canvas: 矩陣數位雨 (Matrix Rain) -->
+    <canvas id="matrixCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20"></canvas>
 
-  <div class="container">
-    <!-- Hero Section -->
-    <section class="hero" id="about">
-      <div class="avatar">👨‍💻</div>
-      <h1>你好，我是 Web App 開發者</h1>
-      <p>熱衷於打造高復用性的前端 Web Component、Canvas 互動介面與 Three.js 3D 視覺化體驗。</p>
-      <div class="tags">
-        <span class="tag">#Web Components</span>
-        <span class="tag">#Three.js 3D</span>
-        <span class="tag">#Fabric.js Canvas</span>
-        <span class="tag">#Shadow DOM 樣式隔離</span>
-      </div>
-    </section>
+    <!-- 掃描線遮罩 -->
+    <div class="fixed inset-0 pointer-events-none scanline-effect z-50 opacity-40"></div>
+
+    <!-- 頂部導覽列 -->
+    <header class="sticky top-0 z-40 bg-cyber-darker/90 backdrop-blur-md border-b border-cyber-green/30 px-4 lg:px-8 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-cyber-green rounded-full animate-ping"></div>
+                <a href="#" class="text-xl font-bold tracking-widest text-cyber-green glitch-text" data-text="CRAYHUNG_PORTFOLIO">
+                    CRAYHUNG <span class="text-xs text-cyber-cyan font-normal">// PORTFOLIO</span>
+                </a>
+            </div>
+
+            <nav class="hidden md:flex items-center gap-8 text-sm uppercase tracking-wider">
+                <a href="#about" class="hover:text-cyber-green transition-colors flex items-center gap-1">
+                    <i data-lucide="file-code" class="w-4 h-4"></i> 專案與經歷
+                </a>
+                <a href="#featured" class="hover:text-cyber-green transition-colors flex items-center gap-1">
+                    <i data-lucide="play-circle" class="w-4 h-4"></i> 主打作品
+                </a>
+                <a href="#gallery" class="hover:text-cyber-green transition-colors flex items-center gap-1">
+                    <i data-lucide="grid" class="w-4 h-4"></i> 作品藝廊
+                </a>
+                <a href="#skills" class="hover:text-cyber-green transition-colors flex items-center gap-1">
+                    <i data-lucide="cpu" class="w-4 h-4"></i> 開發工具箱
+                </a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs bg-cyber-card border border-cyber-cyan/50 hover:border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 rounded transition-all flex items-center gap-1.5 shadow-neon-cyan">
+                    <i data-lucide="github" class="w-3.5 h-3.5"></i> @CrayHung
+                </a>
+                <button id="toggleMatrixBtn" class="px-3 py-1.5 text-xs border border-cyber-green/50 hover:border-cyber-green text-cyber-green hover:bg-cyber-green/10 rounded transition-all hidden sm:flex items-center gap-1">
+                    <i data-lucide="terminal" class="w-3.5 h-3.5"></i> 矩陣特效: <span id="matrixStatus">開啟</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主頁 Hero 區塊 / 個人專案與介紹 -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-16">
+
+        <!-- Banner & Header -->
+        <section class="border border-cyber-green/30 bg-cyber-card/60 backdrop-blur-md p-6 lg:p-8 rounded-lg relative overflow-hidden shadow-neon-green">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-cyber-green/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded bg-cyber-green/10 border border-cyber-green/40 text-cyber-green text-xs mb-1">
+                        <i data-lucide="terminal" class="w-3.5 h-3.5"></i> SYSTEM STATUS: ACTIVE // GITHUB @CrayHung
+                    </div>
+                    <h1 class="text-3xl lg:text-5xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                        <span class="text-cyber-green">&gt;</span> CrayHung
+                        <span class="text-xs px-2.5 py-1 rounded bg-cyber-cyan/20 border border-cyber-cyan text-cyber-cyan font-normal tracking-normal">Software Developer & Video Editor</span>
+                    </h1>
+                    <p class="text-gray-400 max-w-2xl text-sm md:text-base leading-relaxed">
+                        專注於 <strong class="text-cyber-green">Java 系統開發（倉管/庫存管理系統）</strong>、<strong class="text-cyber-cyan">Web 應用開發</strong>與 <strong class="text-cyber-brightGreen">FlexClip 多媒體影片剪輯</strong>。結合現代開發技術與 AI 動畫視覺生成。
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 bg-cyber-green text-black font-bold hover:bg-cyber-brightGreen transition-all rounded shadow-neon-green flex items-center gap-2 text-sm">
+                        <i data-lucide="github" class="w-4 h-4"></i>造訪 GitHub 倉庫
+                    </a>
+                    <a href="#featured" class="px-5 py-2.5 border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/10 transition-all rounded flex items-center gap-2 text-sm">
+                        <i data-lucide="play" class="w-4 h-4"></i> 觀看主打作品
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT ME / PROJECT & TOOL MATRIX (重點關注於系統開發與實務工具) -->
+        <section id="about" class="space-y-6">
+            <div class="flex items-center justify-between border-b border-cyber-green/20 pb-3">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <span class="text-cyber-green">&gt;</span> 專案經驗與工具簡介 / PROJECT & STACK
+                </h2>
+                <span class="text-xs text-cyber-cyan bg-cyber-cyan/10 px-2 py-1 rounded border border-cyber-cyan/30">
+                    STATUS: AVAILABLE FOR PROJECTS
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                <!-- 左側：系統專案與技術簡介 README (8 欄) -->
+                <div class="lg:col-span-8 bg-cyber-card/90 border border-cyber-green/40 rounded-lg p-6 space-y-6 shadow-neon-green relative">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                            <i data-lucide="folder-git-2" class="w-4 h-4 text-cyber-green"></i>
+                            <span class="text-white font-bold">CrayHung / README.md</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                        </div>
+                    </div>
+
+                    <!-- README 內文重點：Java 倉管系統與工具鏈 -->
+                    <div class="space-y-5 text-sm text-gray-300 leading-relaxed font-mono">
+                        <div class="p-3.5 bg-cyber-black/80 rounded border border-cyber-green/30 text-xs space-y-1">
+                            <p class="text-cyber-green font-bold text-sm">👨‍💻 關於 CrayHung (About Developer)</p>
+                            <p class="text-gray-300">熱衷於後端系統開發、資料庫設計與多媒體視覺剪輯。擅長運用 <span class="text-cyber-green font-bold">Java</span> 構建穩定的商業邏輯系統，並結合 <span class="text-cyber-cyan font-bold">FlexClip</span> 與 AI 工具創作多媒體影片。</p>
+                        </div>
+
+                        <!-- 專案經歷區塊 -->
+                        <div class="space-y-3">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2 border-b border-gray-800 pb-1.5">
+                                <i data-lucide="package" class="w-4.5 h-4.5 text-cyber-green"></i> 主要開發專案 (Featured Projects)
+                            </h3>
+                            
+                            <div class="space-y-3">
+                                <!-- 專案 1: Java 倉管系統 -->
+                                <div class="p-3.5 bg-cyber-black/60 rounded border border-cyber-green/30 space-y-1.5 hover:border-cyber-green transition-all">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-cyber-green font-bold text-sm flex items-center gap-1.5">
+                                            <i data-lucide="database" class="w-4 h-4"></i> Java 倉庫物流管理系統 (Warehouse Management System)
+                                        </span>
+                                        <span class="text-[10px] bg-cyber-green/10 border border-cyber-green/40 text-cyber-green px-2 py-0.5 rounded">核心專案</span>
+                                    </div>
+                                    <p class="text-xs text-gray-300">
+                                        以 Java 開發的後端與庫存管理系統，具備商品進出貨追蹤、庫存預警控管、條碼/批號檢索與資料庫 CRUD 操作功能。優化倉儲盤點效率與數據準確度。
+                                    </p>
+                                    <div class="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                                        <span class="px-2 py-0.5 bg-cyber-card border border-cyber-green/30 text-cyber-green rounded">Java OOP</span>
+                                        <span class="px-2 py-0.5 bg-cyber-card border border-gray-700 text-gray-300 rounded">MySQL / Database</span>
+                                        <span class="px-2.5 py-0.5 bg-cyber-card border border-gray-700 text-gray-300 rounded">WMS Architecture</span>
+                                    </div>
+                                </div>
+
+                                <!-- 專案 2: 多媒體動畫與影片剪輯 -->
+                                <div class="p-3.5 bg-cyber-black/60 rounded border border-cyber-cyan/30 space-y-1.5 hover:border-cyber-cyan transition-all">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-cyber-cyan font-bold text-sm flex items-center gap-1.5">
+                                            <i data-lucide="film" class="w-4 h-4"></i> FlexClip 多媒體影音與賽博短片創作
+                                        </span>
+                                        <span class="text-[10px] bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan px-2 py-0.5 rounded">多媒體專案</span>
+                                    </div>
+                                    <p class="text-xs text-gray-300">
+                                        運用 FlexClip 剪輯軟體、VFX 粒子特效與 AI 動畫生成技術，獨立完成《The Glitch Chamber》等多媒體概念影片，包含鏡頭編排、音效合成與轉場後製。
+                                    </p>
+                                    <div class="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                                        <span class="px-2 py-0.5 bg-cyber-card border border-cyber-cyan/30 text-cyber-cyan rounded">FlexClip Video Editor</span>
+                                        <span class="px-2 py-0.5 bg-cyber-card border border-gray-700 text-gray-300 rounded">AI Visual Gen</span>
+                                        <span class="px-2.5 py-0.5 bg-cyber-card border border-gray-700 text-gray-300 rounded">Sound Design</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 主要工具 Stack -->
+                        <div class="space-y-2 pt-2">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2 border-b border-gray-800 pb-1.5">
+                                <i data-lucide="wrench" class="w-4.5 h-4.5 text-cyber-cyan"></i> 工具與核心技能 (Developer Stack)
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div class="p-2 bg-cyber-black/50 border border-cyber-green/20 rounded">
+                                    <span class="text-cyber-green font-bold">程式語言 & 後端：</span>
+                                    <span class="text-gray-300">Java, SQL, MySQL, REST APIs</span>
+                                </div>
+                                <div class="p-2 bg-cyber-black/50 border border-cyber-cyan/20 rounded">
+                                    <span class="text-cyber-cyan font-bold">前端網頁開發：</span>
+                                    <span class="text-gray-300">HTML5, CSS3, JavaScript, Tailwind CSS</span>
+                                </div>
+                                <div class="p-2 bg-cyber-black/50 border border-purple-500/20 rounded">
+                                    <span class="text-purple-300 font-bold">版本控制 & 部署：</span>
+                                    <span class="text-gray-300">Git, GitHub, GitHub Pages</span>
+                                </div>
+                                <div class="p-2 bg-cyber-black/50 border border-yellow-500/20 rounded">
+                                    <span class="text-yellow-300 font-bold">多媒體與 AI 工具：</span>
+                                    <span class="text-gray-300">FlexClip Video, AI Anime Generator</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 右側：GitHub 專案卡片 (4 欄) -->
+                <div class="lg:col-span-4 space-y-4 flex flex-col justify-between">
+                    <div class="bg-cyber-card/80 p-5 rounded-lg border border-cyber-cyan/30 space-y-4">
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <i data-lucide="git-pull-request" class="w-4 h-4 text-cyber-cyan"></i> 精選專案庫 (Repositories)
+                        </h3>
+
+                        <!-- 倉庫卡片 1: Java 倉管系統 -->
+                        <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="block p-3.5 rounded bg-cyber-black/80 border border-cyber-green/40 hover:border-cyber-green transition-all group shadow-neon-green">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-xs text-cyber-green group-hover:underline flex items-center gap-1">
+                                    <i data-lucide="folder-git" class="w-3.5 h-3.5"></i> CrayHung / java-wms-system
+                                </span>
+                                <span class="text-[10px] text-gray-400 border border-gray-700 px-1.5 py-0.5 rounded">Java</span>
+                            </div>
+                            <p class="text-[11px] text-gray-300 line-clamp-2">基於 Java 的倉庫管理與庫存統計系統，支援進銷存數據紀錄與檢索。</p>
+                            <div class="mt-2.5 flex items-center gap-3 text-[10px] text-gray-400">
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Java</span>
+                                <span class="flex items-center gap-1"><i data-lucide="database" class="w-3 h-3 text-cyber-green"></i> MySQL</span>
+                            </div>
+                        </a>
+
+                        <!-- 倉庫卡片 2: FlexClip 作品專案 -->
+                        <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="block p-3.5 rounded bg-cyber-black/80 border border-cyber-cyan/30 hover:border-cyber-cyan transition-all group">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-xs text-cyber-cyan group-hover:underline flex items-center gap-1">
+                                    <i data-lucide="folder-git" class="w-3.5 h-3.5"></i> CrayHung / flexclip-cyber-video
+                                </span>
+                                <span class="text-[10px] text-gray-400 border border-gray-700 px-1.5 py-0.5 rounded">Media</span>
+                            </div>
+                            <p class="text-[11px] text-gray-300 line-clamp-2">《The Glitch Chamber》多媒體動畫短片剪輯資源與專案腳本。</p>
+                            <div class="mt-2.5 flex items-center gap-3 text-[10px] text-gray-400">
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> FlexClip</span>
+                                <span class="flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 text-cyber-cyan"></i> 16</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 按鈕 -->
+                    <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="w-full py-3 bg-cyber-black hover:bg-cyber-cyan/20 border border-cyber-cyan text-cyber-cyan rounded text-xs font-bold transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="external-link" class="w-4 h-4"></i> 造訪 CrayHung GitHub 完整專案
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURED VIDEO SECTION (主打影音作品展示) -->
+        <section id="featured" class="space-y-6">
+            <div class="flex items-center justify-between border-b border-cyber-green/20 pb-3">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <span class="text-cyber-green">&gt;</span> 主打多媒體作品 / FEATURED VIDEO
+                </h2>
+                <span class="text-xs text-cyber-green/80 bg-cyber-green/10 px-2 py-1 rounded border border-cyber-green/30">
+                    ID: PRJ-GLITCH-01
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- 影片播放器 (占用 7 欄) -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="relative group rounded-lg overflow-hidden border-2 border-cyber-green/50 bg-black shadow-neon-green">
+                        <!-- Google Drive 內嵌影片播放器 -->
+                        <div class="w-full aspect-video relative">
+                            <iframe src="https://drive.google.com/file/d/1paEpKhx41YYsoHOBN1cKrSUCkxARiQ-w/preview" class="w-full h-full border-0" allow="autoplay" allowfullscreen></iframe>
+                        </div>
+                        
+                        <!-- Glitch 裝飾標籤 -->
+                        <div class="absolute top-3 left-3 bg-cyber-darker/90 backdrop-blur text-cyber-green text-xs font-mono px-2 py-1 rounded border border-cyber-green/40 pointer-events-none z-10">
+                            REC ● [THE GLITCH CHAMBER]
+                        </div>
+                    </div>
+
+                    <!-- 影片時間軸與連結按鈕 -->
+                    <div class="bg-cyber-card/80 p-4 rounded-lg border border-cyber-green/20 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5 text-cyber-green"></i> 關鍵劇情章節導覽
+                            </h4>
+                            <a href="https://drive.google.com/file/d/1paEpKhx41YYsoHOBN1cKrSUCkxARiQ-w/view?usp=drive_link" target="_blank" rel="noopener noreferrer" class="text-xs text-cyber-cyan hover:underline flex items-center gap-1">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> Google Drive 開啟影片
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div class="p-2 rounded bg-cyber-black/60 border border-cyber-green/20">
+                                <div class="text-[10px] text-cyber-green font-bold">00:00 - 00:02</div>
+                                <div class="text-xs text-gray-300 truncate">工作台整備</div>
+                            </div>
+                            <div class="p-2 rounded bg-cyber-black/60 border border-cyber-green/20">
+                                <div class="text-[10px] text-cyber-green font-bold">00:03 - 00:07</div>
+                                <div class="text-xs text-gray-300 truncate">進入矩陣通道</div>
+                            </div>
+                            <div class="p-2 rounded bg-cyber-black/60 border border-cyber-red/30">
+                                <div class="text-[10px] text-cyber-red font-bold">00:13 - 00:19</div>
+                                <div class="text-xs text-gray-300 truncate">巨獸 The Glitch</div>
+                            </div>
+                            <div class="p-2 rounded bg-cyber-black/60 border border-cyber-cyan/30">
+                                <div class="text-[10px] text-cyber-cyan font-bold">00:20 - 00:29</div>
+                                <div class="text-xs text-gray-300 truncate">淨化與未來城</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片詳細說明 (占用 5 欄) -->
+                <div class="lg:col-span-5 space-y-6 bg-cyber-card/80 p-6 rounded-lg border border-cyber-green/30">
+                    <div>
+                        <div class="text-xs text-cyber-cyan tracking-widest uppercase mb-1">FlexClip Editing / 概念短片</div>
+                        <h3 class="text-2xl font-bold text-white mb-3"> The Glitch Chamber (除錯領域)</h3>
+                        <p class="text-sm text-gray-300 leading-relaxed mb-4">
+                            由 CrayHung 製作的動態短片。講述少年工程師在修理舊型裝置時，意外解鎖隱藏的矩陣通道。面對突如其來的病毒巨獸「Glitch Monster」，他拔出能量光劍進行戰鬥，最終淨化程式漏洞，通往充滿希望的賽博未來都市。
+                        </p>
+                    </div>
+
+                    <!-- 技術規格標籤 -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-cyber-green uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="wrench" class="w-3.5 h-3.5"></i> 創作工具與技術 (Tech Stack)
+                        </h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 text-xs rounded bg-cyber-green/10 text-cyber-green border border-cyber-green/30">FlexClip Video Editor</span>
+                            <span class="px-2.5 py-1 text-xs rounded bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30">AI Anime Animation</span>
+                            <span class="px-2.5 py-1 text-xs rounded bg-purple-500/10 text-purple-300 border border-purple-500/30">Particle FX</span>
+                            <span class="px-2.5 py-1 text-xs rounded bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">Sound Design</span>
+                            <span class="px-2.5 py-1 text-xs rounded bg-cyber-red/10 text-cyber-red border border-cyber-red/30">Matrix Rain VFX</span>
+                        </div>
+                    </div>
+
+                    <!-- 製作細節面板 -->
+                    <div class="space-y-2 border-t border-cyber-green/20 pt-4 text-xs text-gray-400">
+                        <div class="flex justify-between py-1 border-b border-gray-800">
+                            <span>創作者 (Author):</span>
+                            <span class="text-cyber-green font-bold">CrayHung</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800">
+                            <span>剪輯工具 (Editor):</span>
+                            <span class="text-gray-200">FlexClip Video Editor</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800">
+                            <span>動畫風格 (Style):</span>
+                            <span class="text-gray-200">Cyberpunk Anime / 賽博動漫</span>
+                        </div>
+                        <div class="flex justify-between py-1">
+                            <span>製作年份 (Year):</span>
+                            <span class="text-gray-200">2026</span>
+                        </div>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex gap-3 pt-2">
+                        <button onclick="likeProject()" class="flex-1 py-2 bg-cyber-black hover:bg-cyber-green/20 border border-cyber-green/40 text-cyber-green rounded text-xs font-bold transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="heart" class="w-4 h-4"></i> 按讚作品 (<span id="likeCount">256</span>)
+                        </button>
+                        <button onclick="shareProject()" class="px-4 py-2 bg-cyber-black hover:bg-cyber-cyan/20 border border-cyber-cyan/40 text-cyber-cyan rounded text-xs font-bold transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> 分享專案
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALLERY SECTION (作品集其他項目) -->
+        <section id="gallery" class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyber-green/20 pb-3 gap-4">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <span class="text-cyber-green">&gt;</span> 作品與專案藝廊 / PORTFOLIO GALLERY
+                </h2>
 
     <!-- 🎯 核心亮點：2D/3D 魔法圖層 Web Component 區塊 -->
     <section id="interactive">
@@ -169,25 +479,390 @@
       </div>
     </section>
 
-    <!-- 精選作品集 / 智慧書籤展示區 -->
-    <section id="projects">
-      <div class="section-title">其他專案與經驗</div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-        <div style="background: #0f172a; border: 1px solid #1e293b; padding: 20px; border-radius: 12px;">
-          <h3 style="color: #38bdf8; margin-bottom: 8px;">📌 私人智慧書籤 App</h3>
-          <p style="color: #94a3b8; font-size: 0.85rem;">自動解析網址並渲染質感縮圖卡片，支援深色模式與動態 LocalStorage 書籤管理。</p>
-        </div>
-        <div style="background: #0f172a; border: 1px solid #1e293b; padding: 20px; border-radius: 12px;">
-          <h3 style="color: #38bdf8; margin-bottom: 8px;">🚀 跨框架元件庫設計</h3>
-          <p style="color: #94a3b8; font-size: 0.85rem;">使用原生 HTML5 & ES6 Class 實現零樣式污染的自訂元件，提升團隊開發效率。</p>
-        </div>
-      </div>
-    </section>
 
-    <footer>
-      © 2026 Personal Resume Web App. Built with Web Components & Three.js.
+                <!-- 分類過濾器 -->
+                <div class="flex flex-wrap gap-2" id="filterContainer">
+                    <button onclick="filterGallery('all')" class="gallery-filter-btn px-3 py-1 text-xs rounded bg-cyber-green text-black font-bold transition-all" data-filter="all">全部 (ALL)</button>
+                    <button onclick="filterGallery('system')" class="gallery-filter-btn px-3 py-1 text-xs rounded bg-cyber-black text-gray-400 border border-cyber-green/30 hover:border-cyber-green transition-all" data-filter="system">Java 系統開發</button>
+                    <button onclick="filterGallery('video')" class="gallery-filter-btn px-3 py-1 text-xs rounded bg-cyber-black text-gray-400 border border-cyber-green/30 hover:border-cyber-green transition-all" data-filter="video">FlexClip 影片</button>
+                    <button onclick="filterGallery('vfx')" class="gallery-filter-btn px-3 py-1 text-xs rounded bg-cyber-black text-gray-400 border border-cyber-green/30 hover:border-cyber-green transition-all" data-filter="vfx">VFX/AI 視覺</button>
+                </div>
+            </div>
+
+            <!-- 卡片列表 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="galleryGrid">
+                
+                <!-- 卡片 1: Java 倉管系統 -->
+                <div class="gallery-item system bg-cyber-card border border-cyber-green/40 hover:border-cyber-green rounded-lg overflow-hidden group transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-neon-green">
+                    <div class="relative aspect-video bg-cyber-darker overflow-hidden flex items-center justify-center border-b border-cyber-green/20">
+                        <div class="text-center p-4">
+                            <i data-lucide="database" class="w-12 h-12 text-cyber-green mx-auto mb-2 opacity-80 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs text-cyber-green font-bold">[ Java WMS 倉管系統 ]</span>
+                        </div>
+                        <span class="absolute top-2 left-2 z-20 px-2 py-0.5 text-[10px] bg-cyber-green text-black font-bold rounded">
+                            JAVA SYSTEM
+                        </span>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="text-xs text-cyber-green">Java / 後端資料庫系統</div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-cyber-green transition-colors">Warehouse Inventory System</h3>
+                        <p class="text-xs text-gray-400 line-clamp-2">提供進銷存紀錄管理、條碼掃描匹配與庫存盤點警示的後端管理系統。</p>
+                        <div class="pt-2 flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Java / MySQL</span>
+                            <button onclick="openModal('system1')" class="text-cyber-green hover:underline flex items-center gap-1">
+                                詳情 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 2: FlexClip 影片 -->
+                <div class="gallery-item video bg-cyber-card border border-cyber-cyan/40 hover:border-cyber-cyan rounded-lg overflow-hidden group transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-neon-cyan">
+                    <div class="relative aspect-video bg-black overflow-hidden flex items-center justify-center">
+                        <div class="w-full h-full flex items-center justify-center bg-cyber-darker text-cyber-cyan group-hover:scale-105 transition-transform duration-500">
+                            <i data-lucide="play-circle" class="w-16 h-16 opacity-80 group-hover:opacity-100"></i>
+                        </div>
+                        <span class="absolute top-2 left-2 z-20 px-2 py-0.5 text-[10px] bg-cyber-cyan text-black font-bold rounded">
+                            FLEXCLIP
+                        </span>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="text-xs text-cyber-cyan">FlexClip 剪輯 / AI 短片</div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-cyber-cyan transition-colors">The Glitch Chamber</h3>
+                        <p class="text-xs text-gray-400 line-clamp-2">少年工程師修復儀器時闖入矩陣空間，對決病毒巨獸的戰鬥冒險故事。</p>
+                        <div class="pt-2 flex justify-between items-center text-xs">
+                            <span class="text-gray-500">FlexClip / AI Video</span>
+                            <button onclick="openModal('featured')" class="text-cyber-cyan hover:underline flex items-center gap-1">
+                                詳情 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片 3: VFX/AI 特效 -->
+                <div class="gallery-item vfx bg-cyber-card border border-cyber-red/20 hover:border-cyber-red rounded-lg overflow-hidden group transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-neon-red">
+                    <div class="relative aspect-video bg-cyber-darker overflow-hidden flex items-center justify-center">
+                        <div class="text-center p-4">
+                            <i data-lucide="zap" class="w-12 h-12 text-cyber-red mx-auto mb-2 opacity-60 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs text-gray-500">[ 光劍粒子戰鬥特效 ]</span>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="text-xs text-cyber-red">VFX 特效實驗</div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-cyber-red transition-colors">Energy Blade Particle FX</h3>
+                        <p class="text-xs text-gray-400 line-clamp-2">動態刀光軌跡、能量電擊與撞擊粒子散落特效合成測試。</p>
+                        <div class="pt-2 flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Particle VFX</span>
+                            <button onclick="openModal('vfx1')" class="text-cyber-red hover:underline flex items-center gap-1">
+                                詳情 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SKILLS SECTION (技能與開發工具箱) -->
+        <section id="skills" class="space-y-6">
+            <div class="border-b border-cyber-green/20 pb-3">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <span class="text-cyber-green">&gt;</span> 開發工具箱與熟練度 / TECH SPECS
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 技能組 1: Java & 後端 -->
+                <div class="bg-cyber-card p-5 rounded-lg border border-cyber-green/30 space-y-4">
+                    <div class="flex items-center gap-3 text-cyber-green">
+                        <i data-lucide="code" class="w-6 h-6"></i>
+                        <h3 class="font-bold text-lg">Java & 系統開發</h3>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Java 程式設計 & 物件導向</span>
+                                <span class="text-cyber-green">90%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-green/30">
+                                <div class="bg-cyber-green h-1.5 rounded-full" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>倉管/庫存邏輯 (WMS Logic)</span>
+                                <span class="text-cyber-green">88%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-green/30">
+                                <div class="bg-cyber-green h-1.5 rounded-full" style="width: 88%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 技能組 2: FlexClip & 多媒體 -->
+                <div class="bg-cyber-card p-5 rounded-lg border border-cyber-cyan/30 space-y-4">
+                    <div class="flex items-center gap-3 text-cyber-cyan">
+                        <i data-lucide="video" class="w-6 h-6"></i>
+                        <h3 class="font-bold text-lg">FlexClip & 影音剪輯</h3>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>FlexClip 影音剪輯與後製</span>
+                                <span class="text-cyber-cyan">92%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-cyan/30">
+                                <div class="bg-cyber-cyan h-1.5 rounded-full" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>AI 視覺生成與動漫短片</span>
+                                <span class="text-cyber-cyan">85%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-cyan/30">
+                                <div class="bg-cyber-cyan h-1.5 rounded-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 技能組 3: 前端與 Git -->
+                <div class="bg-cyber-card p-5 rounded-lg border border-cyber-red/30 space-y-4">
+                    <div class="flex items-center gap-3 text-cyber-red">
+                        <i data-lucide="git-branch" class="w-6 h-6"></i>
+                        <h3 class="font-bold text-lg">前端 & 版本控制</h3>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Git / GitHub 專案管理</span>
+                                <span class="text-cyber-red">88%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-red/30">
+                                <div class="bg-cyber-red h-1.5 rounded-full" style="width: 88%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>HTML5 / Tailwind CSS</span>
+                                <span class="text-cyber-red">82%</span>
+                            </div>
+                            <div class="w-full bg-cyber-black rounded-full h-1.5 border border-cyber-red/30">
+                                <div class="bg-cyber-red h-1.5 rounded-full" style="width: 82%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="bg-cyber-card p-6 lg:p-8 rounded-lg border border-cyber-cyan/30 space-y-4">
+            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="send" class="text-cyber-cyan"></i> 發送訊息 / TRANSMIT MESSAGE
+            </h2>
+            <form id="contactForm" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs max-w-2xl">
+                <div>
+                    <label class="block text-gray-400 mb-1">您的暱稱 / NAME</label>
+                    <input type="text" required placeholder="Ex: Developer / Recruiter" class="w-full bg-cyber-black border border-cyber-cyan/30 rounded p-2 text-white focus:outline-none focus:border-cyber-cyan">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">電子郵件 / EMAIL</label>
+                    <input type="email" required placeholder="contact@domain.com" class="w-full bg-cyber-black border border-cyber-cyan/30 rounded p-2 text-white focus:outline-none focus:border-cyber-cyan">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">訊息內容 / MESSAGE</label>
+                    <textarea rows="3" required placeholder="給 CrayHung 的專案合作諮詢或訊息..." class="w-full bg-cyber-black border border-cyber-cyan/30 rounded p-2 text-white focus:outline-none focus:border-cyber-cyan"></textarea>
+                </div>
+                <button type="submit" class="w-full sm:w-auto px-6 py-2 bg-cyber-cyan text-black font-bold rounded hover:bg-white transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i> 發送訊息給 CrayHung
+                </button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="mt-16 border-t border-cyber-green/20 bg-cyber-darker py-6 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                © 2026 CRAYHUNG. ALL RIGHTS RESERVED. DEVELOPED WITH JAVA & FLEXCLIP.
+            </div>
+            <div class="flex gap-4">
+                <a href="https://github.com/CrayHung" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-green flex items-center gap-1">
+                    <i data-lucide="github" class="w-3.5 h-3.5"></i> GITHUB @CrayHung
+                </a>
+            </div>
+        </div>
     </footer>
-  </div>
+
+    <!-- 彈出式詳情 Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-green max-w-xl w-full p-6 rounded-lg relative space-y-4">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 id="modalTitle" class="text-xl font-bold text-cyber-green">專案詳情</h3>
+            <div id="modalContent" class="text-sm text-gray-300 space-y-2">
+                <!-- 動態注入內容 -->
+            </div>
+            <button onclick="closeModal()" class="w-full py-2 bg-cyber-green/20 border border-cyber-green text-cyber-green rounded text-xs font-bold hover:bg-cyber-green hover:text-black transition-all">
+                關閉面板
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript 腳本 -->
+    <script>
+        // 初始化 Lucide 圖示
+        lucide.createIcons();
+
+        // 1. Matrix 數位雨背景特效
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ';
+        const fontSize = 14;
+        let columns = Math.floor(canvas.width / fontSize);
+        let drops = Array(columns).fill(1);
+        let matrixActive = true;
+
+        function drawMatrix() {
+            if (!matrixActive) return;
+            ctx.fillStyle = 'rgba(10, 13, 18, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff66';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        let matrixInterval = setInterval(drawMatrix, 40);
+
+        // 控制矩陣背景開關
+        document.getElementById('toggleMatrixBtn').addEventListener('click', () => {
+            matrixActive = !matrixActive;
+            document.getElementById('matrixStatus').textContent = matrixActive ? '開啟' : '關閉';
+            if (!matrixActive) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // 2. 作品集藝廊過濾
+        function filterGallery(category) {
+            const items = document.querySelectorAll('.gallery-item');
+            const buttons = document.querySelectorAll('.gallery-filter-btn');
+
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-filter') === category) {
+                    btn.classList.remove('bg-cyber-black', 'text-gray-400');
+                    btn.classList.add('bg-cyber-green', 'text-black', 'font-bold');
+                } else {
+                    btn.classList.add('bg-cyber-black', 'text-gray-400');
+                    btn.classList.remove('bg-cyber-green', 'text-black', 'font-bold');
+                }
+            });
+
+            items.forEach(item => {
+                if (category === 'all' || item.classList.contains(category)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // 3. 按讚功能
+        let liked = false;
+        function likeProject() {
+            const countSpan = document.getElementById('likeCount');
+            let count = parseInt(countSpan.textContent);
+            if (!liked) {
+                countSpan.textContent = count + 1;
+                liked = true;
+                showToast('已加入收藏！感謝支持 CrayHung 的專案。');
+            } else {
+                countSpan.textContent = count - 1;
+                liked = false;
+            }
+        }
+
+        // 4. 分享功能
+        function shareProject() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href);
+                showToast('專案網址已複製到剪貼簿！');
+            } else {
+                showToast('已發送分享請求。');
+            }
+        }
+
+        // 5. 簡易 Toast 提示面板
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-cyber-green text-black px-4 py-2 rounded shadow-neon-green text-xs font-bold z-50 animate-bounce';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // 6. Modal 視窗操作
+        function openModal(id) {
+            const modal = document.getElementById('detailModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+
+            if (id === 'system1') {
+                title.textContent = 'Java 倉庫物流管理系統 (WMS)';
+                content.innerHTML = `
+                    <p><strong>開發語言：</strong>Java, MySQL Database</p>
+                    <p><strong>核心功能：</strong>包含商品入庫/出庫管理、儲位追蹤、庫存安全存量預警警示與條碼比對。</p>
+                    <p><strong>架構重點：</strong>採用 Java 物件導向設計與模組化架構，簡化日常倉儲盤點作業。</p>
+                `;
+            } else if (id === 'featured') {
+                title.textContent = 'The Glitch Chamber (除錯領域)';
+                content.innerHTML = `
+                    <p><strong>剪輯工具：</strong>FlexClip Video Editor</p>
+                    <p><strong>劇情大綱：</strong>少年工程師在修復舊型機器時意外開啟了隱藏的矩陣通道，面對突然侵襲的病毒巨獸，他揮舞光劍展開對決並將其淨化。</p>
+                `;
+            } else if (id === 'vfx1') {
+                title.textContent = 'Energy Blade Particle FX';
+                content.innerHTML = `
+                    <p>專注於光劍粒子揮舞特效與電擊火花的質感合成專案。</p>
+                `;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // 7. 聯絡表單發送處理
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            showToast('訊息已成功傳送給 CrayHung！');
+            e.target.reset();
+        }
+    </script>
 
   <!-- 引入封裝好的 Web Component 邏輯 -->
   <script>
@@ -351,5 +1026,6 @@
 
     customElements.define('magic-3d-layer', Magic3DLayer);
   </script>
+
 </body>
 </html>
