@@ -492,15 +492,23 @@
           <div class="px-4 py-3 text-xs text-gray-400">3D 視覺成果</div>
         </article>
 
-        <article class="bg-cyber-card/90 border border-cyber-green/30 rounded-lg overflow-hidden shadow-neon-green">
-          <div class="px-4 py-3 border-b border-cyber-green/20 flex items-center justify-between">
-            <span class="text-cyber-green font-bold text-sm">03 // 3D MODEL</span>
-            <span class="text-[10px] text-gray-500">GLB LIVE VIEWER</span>
+        <article class="relative bg-cyber-card/95 border-2 border-cyber-green rounded-xl overflow-hidden shadow-[0_0_16px_rgba(0,255,102,0.75),0_0_42px_rgba(0,255,102,0.28)] transition-all duration-300 hover:shadow-[0_0_22px_rgba(0,255,102,0.95),0_0_55px_rgba(0,255,102,0.42)]">
+          <div class="absolute top-0 left-0 right-0 h-[2px] bg-cyber-green shadow-[0_0_12px_rgba(0,255,102,1)] z-20"></div>
+          <div class="px-4 py-3 border-b border-cyber-green/50 bg-cyber-green/5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyber-green shadow-[0_0_8px_rgba(0,255,102,1)] animate-pulse"></span>
+              <span class="text-cyber-green font-bold text-sm tracking-wider">03 // 3D MODEL</span>
+            </div>
+            <span class="text-[10px] text-cyber-green/80 border border-cyber-green/40 rounded px-2 py-1">GLB LIVE VIEWER</span>
           </div>
           <div id="glb-model-viewer" class="h-[420px] bg-cyber-darker relative overflow-hidden">
             <div id="glb-loading" class="absolute inset-0 flex items-center justify-center text-xs text-cyber-green z-10 pointer-events-none">LOADING 3D MODEL...</div>
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] rounded-full bg-cyber-green/5 blur-3xl pointer-events-none"></div>
           </div>
-          <div class="px-4 py-3 text-xs text-gray-400">拖曳旋轉 / 滾輪縮放 / 右鍵平移</div>
+          <div class="px-4 py-3 border-t border-cyber-green/20 bg-black/20 flex items-center justify-between text-xs">
+            <span class="text-gray-400">拖曳旋轉 / 滾輪縮放 / 右鍵平移</span>
+            <span id="glb-auto-status" class="text-cyber-green/80">● AUTO ROTATE</span>
+          </div>
         </article>
       </div>
     </section>
@@ -906,12 +914,25 @@
       fillLight.position.set(-4, 3, 2);
       scene.add(fillLight);
 
+      let currentModel = null;
+      let mixer = null;
+      const clock = new THREE.Clock();
+      let autoRotate = true;
+      let resumeTimer = null;
+
       const loader = new THREE.GLTFLoader();
       loader.load(
         './assets/image/3D_Model_Preview.glb',
         (gltf) => {
           const model = gltf.scene;
+          currentModel = model;
           scene.add(model);
+
+          // 若 GLB 本身包含骨架/關鍵影格動畫，自動播放全部動畫。
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+          }
 
           const box = new THREE.Box3().setFromObject(model);
           const size = new THREE.Vector3();
@@ -948,8 +969,28 @@
         }
       );
 
+      // 使用者操作時暫停自動旋轉，放開約 1.8 秒後恢復。
+      controls.addEventListener('start', () => {
+        autoRotate = false;
+        if (resumeTimer) clearTimeout(resumeTimer);
+      });
+      controls.addEventListener('end', () => {
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { autoRotate = true; }, 1800);
+      });
+
       const animate = () => {
         requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+
+        // 播放 GLB 內建動畫（若模型有動畫）。
+        if (mixer) mixer.update(delta);
+
+        // 展示模式：模型自動 360° 慢速旋轉。
+        if (currentModel && autoRotate) {
+          currentModel.rotation.y += delta * 0.35;
+        }
+
         controls.update();
         renderer.render(scene, camera);
       };
